@@ -2,7 +2,7 @@ module.exports = Object.freeze({
   url: "https://music.apple.com/",
   name: "Apple Music",
   repoName: "apple-music-aaha",
-  versionLabel: "v0.9",
+  versionLabel: "v0.9.1",
   appId: "com.adamandhisagents.applemusic",
   desktopName: "com.adamandhisagents.applemusic.desktop",
   wmClass: "com.adamandhisagents.applemusic",
@@ -15,6 +15,7 @@ module.exports = Object.freeze({
   openExternalInBrowser: true,
   allowedHostSuffixes: ["apple.com", "icloud.com"],
   allowedPermissions: ["mediaKeySystem"],
+  widevineUpdateIntervalDays: 30,
   blockedHostSuffixes: [
     "1e100.net",
     "doubleclick.net",

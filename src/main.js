@@ -1,8 +1,47 @@
-const { app, BrowserWindow, Menu, session, shell } = require("electron");
+const { spawn } = require("child_process");
+const fs = require("fs");
+const { app, BrowserWindow, components, dialog, Menu, session, shell } = require("electron");
 const path = require("path");
 const cfg = require("../app.config.js");
 
 app.setName(cfg.name);
+
+const widevineStatePath = path.join(app.getPath("userData"), "widevine-state.json");
+const forceWidevineUpdate = process.env.AAHA_WIDEVINE_UPDATE === "1";
+
+function readWidevineState() {
+  try {
+    return JSON.parse(fs.readFileSync(widevineStatePath, "utf8"));
+  } catch (error) {
+    if (error.code !== "ENOENT") {
+      console.warn(`[widevine] Could not read update state: ${error.message}`);
+    }
+    return {};
+  }
+}
+
+function writeWidevineState(state) {
+  const stateDirectory = path.dirname(widevineStatePath);
+  const temporaryPath = `${widevineStatePath}.tmp-${process.pid}`;
+  fs.mkdirSync(stateDirectory, { recursive: true });
+  fs.writeFileSync(temporaryPath, `${JSON.stringify(state, null, 2)}\n`, { mode: 0o600 });
+  fs.renameSync(temporaryPath, widevineStatePath);
+}
+
+function widevineUpdateIsDue(state) {
+  if (forceWidevineUpdate) return true;
+
+  const lastUpdate = Date.parse(state.lastSuccessfulUpdate || "");
+  if (!Number.isFinite(lastUpdate)) return true;
+
+  const intervalMs = cfg.widevineUpdateIntervalDays * 24 * 60 * 60 * 1000;
+  return Date.now() - lastUpdate >= intervalMs;
+}
+
+const startupWidevineState = readWidevineState();
+const widevineUpdateScheduled =
+  forceWidevineUpdate ||
+  (startupWidevineState.consent !== false && widevineUpdateIsDue(startupWidevineState));
 
 if (process.platform === "linux") {
   app.setDesktopName(cfg.desktopName);
@@ -14,9 +53,11 @@ if (process.platform === "linux") {
 }
 
 if (!cfg.disableHardening) {
-  app.commandLine.appendSwitch("disable-background-networking");
+  if (!widevineUpdateScheduled) {
+    app.commandLine.appendSwitch("disable-background-networking");
+    app.commandLine.appendSwitch("disable-component-update");
+  }
   app.commandLine.appendSwitch("disable-domain-reliability");
-  app.commandLine.appendSwitch("disable-component-update");
   app.commandLine.appendSwitch("disable-breakpad");
   app.commandLine.appendSwitch(
     "disable-features",
@@ -32,6 +73,126 @@ app.userAgentFallback =
 const iconPath = path.join(__dirname, "..", "build", "icons", "512x512.png");
 const observedHosts = new Set();
 let mainWindow;
+
+function restartApp() {
+  const args = process.argv.slice(1);
+
+  if (process.env.APPIMAGE) {
+    const child = spawn(process.env.APPIMAGE, args, {
+      detached: true,
+      stdio: "ignore"
+    });
+    child.unref();
+  } else {
+    app.relaunch({ args });
+  }
+
+  app.exit(0);
+}
+
+async function prepareWidevine() {
+  if (!components?.whenReady || !components.WIDEVINE_CDM_ID) {
+    console.error("[widevine] DRM-capable Electron runtime is unavailable");
+    await dialog.showMessageBox({
+      type: "error",
+      title: "Protected playback unavailable",
+      message: "This build cannot initialize Widevine.",
+      detail: "Apple Music will be limited to previews. Reinstall the DRM-capable release.",
+      buttons: ["Continue"]
+    });
+    return true;
+  }
+
+  const state = { ...startupWidevineState };
+
+  // Stop the updater before obtaining consent. This setting persists across launches.
+  components.updatesEnabled = false;
+
+  if (forceWidevineUpdate) {
+    state.consent = true;
+  } else if (state.consent !== true && state.consent !== false) {
+    const { response } = await dialog.showMessageBox({
+      type: "question",
+      title: "Enable full Apple Music playback?",
+      message: "Full tracks require Google Widevine DRM on Linux.",
+      detail:
+        "Enable a direct Widevine download from Google? The updater is disabled again " +
+        `after installation and checked no more than every ${cfg.widevineUpdateIntervalDays} days. ` +
+        "Google advertising and analytics domains remain blocked inside Apple Music.",
+      buttons: ["Enable Full Playback", "Use Previews Only"],
+      defaultId: 0,
+      cancelId: 1,
+      noLink: true
+    });
+
+    state.consent = response === 0;
+    writeWidevineState(state);
+  }
+
+  if (state.consent !== true) {
+    console.info("[widevine] Download declined; preview-only playback remains available");
+    return true;
+  }
+
+  const widevineId = components.WIDEVINE_CDM_ID;
+  const widevineWasPreparedBeforeLaunch = Boolean(
+    state.lastSuccessfulUpdate && state.componentVersion
+  );
+  const shouldUpdate = forceWidevineUpdate || widevineUpdateIsDue(state);
+  components.updatesEnabled = shouldUpdate;
+
+  try {
+    await components.whenReady([widevineId]);
+  } catch (error) {
+    components.updatesEnabled = false;
+
+    if (!shouldUpdate) {
+      console.warn("[widevine] Installed component was unavailable; scheduling a repair launch");
+      delete state.lastSuccessfulUpdate;
+      writeWidevineState(state);
+      restartApp();
+      return false;
+    }
+
+    console.error(`[widevine] Installation or update failed: ${error.message}`);
+    await dialog.showMessageBox({
+      type: "error",
+      title: "Widevine setup failed",
+      message: "Full-track playback could not be prepared.",
+      detail:
+        "Apple Music will remain available in preview mode. Check the network connection, " +
+        "then launch once with AAHA_WIDEVINE_UPDATE=1 to retry.",
+      buttons: ["Continue"]
+    });
+    return true;
+  }
+
+  components.updatesEnabled = false;
+  const statusAfter = components.status()[widevineId];
+
+  if (shouldUpdate) {
+    state.consent = true;
+    state.lastSuccessfulUpdate = new Date().toISOString();
+    state.componentVersion = statusAfter?.version || null;
+    writeWidevineState(state);
+  }
+
+  console.info(
+    `[widevine] Ready: ${statusAfter?.version || "installed"}; automatic updates disabled`
+  );
+
+  if (
+    process.platform === "linux" &&
+    !widevineWasPreparedBeforeLaunch &&
+    statusAfter?.version
+  ) {
+    console.info("[widevine] First Linux installation requires one automatic restart");
+    restartApp();
+    return false;
+  }
+
+  return true;
+}
 
 function hostnameMatches(hostname, suffixes) {
   const normalized = hostname.toLowerCase();
@@ -208,6 +369,8 @@ if (!gotLock) {
 
   app.whenReady().then(async () => {
     Menu.setApplicationMenu(null);
+    const shouldContinue = await prepareWidevine();
+    if (!shouldContinue) return;
     await configureSession();
     createWindow();
 

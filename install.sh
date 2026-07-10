@@ -24,6 +24,13 @@ cp -a "$BUILT_APP" "$STAGE_DEST"
 rm -rf "$APP_DEST"
 mv "$STAGE_DEST" "$APP_DEST"
 
+SANDBOX_HELPER="$APP_DEST/chrome-sandbox"
+if [[ -f "$SANDBOX_HELPER" ]]; then
+  echo ">> Configuring Chromium's sandbox helper (administrator authorization required)..."
+  sudo chown root:root "$SANDBOX_HELPER"
+  sudo chmod 4755 "$SANDBOX_HELPER"
+fi
+
 for size in 16 24 32 48 64 96 128 256 512; do
   icon_dir="$HOME/.local/share/icons/hicolor/${size}x${size}/apps"
   mkdir -p "$icon_dir"
@@ -50,12 +57,12 @@ StartupNotify=true
 X-KDE-StartupNotify=true
 EOF
 
-cp dist/apple-music-aaha-v0.9-*.AppImage "$INSTALL_ROOT/"
+cp dist/apple-music-aaha-v0.9.1-*.AppImage "$INSTALL_ROOT/"
 cp dist/SHA256SUMS "$INSTALL_ROOT/"
 
 update-desktop-database "$apps_dir" 2>/dev/null || true
 gtk-update-icon-cache "$HOME/.local/share/icons/hicolor" 2>/dev/null || true
 kbuildsycoca6 2>/dev/null || true
 
-echo ">> Installed $APP_NAME v0.9 under $INSTALL_ROOT"
+echo ">> Installed $APP_NAME v0.9.1 under $INSTALL_ROOT"
 echo ">> Desktop launcher: $desktop_file"

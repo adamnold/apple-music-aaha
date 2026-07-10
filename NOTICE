@@ -13,3 +13,9 @@ favicon at https://music.apple.com/assets/favicon/favicon-180.png and is used
 only to identify the service opened by this wrapper. This repository contains
 no Apple application code or media. Use of Apple Music remains subject to
 Apple's applicable terms and privacy policy.
+
+This project uses Castlabs Electron for Content Security, an MIT-licensed fork
+of Electron that enables dynamic installation of Google's proprietary Widevine
+Content Decryption Module. Widevine is downloaded from Google only after user
+consent and is not redistributed by this repository or its release artifacts.
+Google and Widevine are trademarks of Google LLC.
