@@ -1,0 +1,33 @@
+module.exports = Object.freeze({
+  url: "https://music.apple.com/",
+  name: "Apple Music",
+  repoName: "apple-music-aaha",
+  versionLabel: "v0.9",
+  appId: "com.adamandhisagents.applemusic",
+  desktopName: "com.adamandhisagents.applemusic.desktop",
+  wmClass: "com.adamandhisagents.applemusic",
+  executableName: "apple-music-aaha",
+  iconName: "apple-music-aaha",
+  width: 1440,
+  height: 900,
+  minWidth: 800,
+  minHeight: 600,
+  openExternalInBrowser: true,
+  allowedHostSuffixes: ["apple.com", "icloud.com"],
+  allowedPermissions: ["mediaKeySystem"],
+  blockedHostSuffixes: [
+    "1e100.net",
+    "doubleclick.net",
+    "google.com",
+    "google-analytics.com",
+    "googleapis.com",
+    "googleusercontent.com",
+    "googlesyndication.com",
+    "googletagmanager.com",
+    "gstatic.com",
+    "youtu.be",
+    "youtube.com"
+  ],
+  forceX11: false,
+  disableHardening: false
+});

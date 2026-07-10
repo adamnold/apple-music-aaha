@@ -1,0 +1,15 @@
+Apple Music (AAHA)
+Copyright 2026 Adam And His Agents (AAHA)
+
+Licensed under the Apache License, Version 2.0.
+
+This is an unofficial third-party Electron wrapper for the Apple Music web
+player at https://music.apple.com/. It is not endorsed by, sponsored by, or
+affiliated with Apple Inc. Apple, Apple Music, and the Apple Music logo are
+trademarks of Apple Inc.
+
+The Apple Music icon is derived from Apple's publicly served web-player
+favicon at https://music.apple.com/assets/favicon/favicon-180.png and is used
+only to identify the service opened by this wrapper. This repository contains
+no Apple application code or media. Use of Apple Music remains subject to
+Apple's applicable terms and privacy policy.
