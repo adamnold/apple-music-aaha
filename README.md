@@ -1,4 +1,4 @@
-# Apple Music (AAHA) v0.9.1
+# Apple Music (AAHA) v0.9.2
 
 An unofficial Apple Music desktop wrapper for Fedora KDE, built by
 **Adam And His Agents (AAHA)**. It opens Apple's official web player in a
@@ -10,6 +10,18 @@ it does not redistribute Apple Music application code or media.
 
 > Not affiliated with Apple Inc. Apple, Apple Music, and the Apple Music logo
 > are trademarks of Apple Inc. See `NOTICE`.
+
+> **Privacy notice — Electron and Google dependency:** This wrapper uses
+> Castlabs Electron, which is based on Chromium. Full-track playback requires
+> Google's proprietary Widevine CDM and a consented download from Google's
+> component service. The wrapper disables several Chromium background services
+> and blocks common Google tracking/resource domains, but it cannot make
+> Chromium or Widevine completely Google-free or independently auditable.
+> Choosing preview-only mode avoids installing Widevine. Read
+> [PRIVACY.md](PRIVACY.md) before installing if this distinction matters to you.
+
+Project documentation: [Changelog](CHANGELOG.md) · [Privacy](PRIVACY.md) ·
+[Contributing](CONTRIBUTING.md)
 
 ## Fedora requirements
 
@@ -30,7 +42,7 @@ The build is tested on Fedora 44 KDE Plasma, x86_64.
 produces:
 
 - `dist/linux-unpacked/`
-- `dist/apple-music-aaha-v0.9.1-x86_64.AppImage`
+- `dist/apple-music-aaha-v0.9.2-x86_64.AppImage`
 - `dist/SHA256SUMS`
 
 `install.sh` copies the unpacked runtime to
@@ -39,8 +51,13 @@ transparent icon at standard Linux sizes, and creates a KDE launcher whose
 desktop name and window identity match exactly. Fedora prompts once through
 `sudo` so the root-owned Chromium sandbox helper can be installed with mode
 `4755`; this keeps the renderer sandbox enabled and avoids `--no-sandbox`.
+Updates preserve an existing secure helper when it is byte-identical, avoiding
+another administrator prompt.
 
-To remove the personal installation, run `./uninstall.sh`.
+To remove the application while preserving its saved website profile, run
+`./uninstall.sh`. To also delete the local login/session data, caches, Widevine
+state, and downloaded component data, run `./uninstall.sh --purge`. Purging does
+not delete the user's Apple account or cloud library.
 
 ## Wayland and taskbar identity
 
@@ -86,12 +103,32 @@ audio. This wrapper therefore uses Castlabs Electron for Content Security and
 Google's proprietary Widevine Content Decryption Module (CDM).
 
 The first launch asks before contacting Google. If approved, Widevine is
-downloaded dynamically from Google's component service; Linux then restarts the
-app once so the sandbox can load it. The component updater is disabled after a
-successful installation using both the ECS setting and Chromium's command-line
-guard, and is enabled no more than once every 30 days for a maintenance check.
-The Apple Music webpage remains subject to the Google-domain subresource
-blocklist throughout playback.
+downloaded dynamically from Google's component service. Linux then displays a
+one-time message and closes cleanly; reopen Apple Music from the application
+launcher so the sandbox can load the newly installed CDM. The app never
+automatically relaunches itself.
+
+The component updater is disabled after a successful installation using ECS's
+persistent `components.updatesEnabled` control, and is enabled no more than
+once every 30 days for a maintenance check. Chromium's unrelated background
+services remain disabled between those checks. The Apple Music webpage remains
+subject to the Google-domain subresource blocklist throughout playback.
+
+If an installed CDM cannot be loaded, Apple Music remains open in preview mode,
+records one repair check for the next manual launch, and does not enter a
+restart loop.
+
+### KDE notifications after upgrading from v0.9.1
+
+KDE DrKonqi may replay queued crash notifications from v0.9.1 after a reboot,
+even after v0.9.2 is installed. Check the timestamp in the crash report: the
+known v0.9.1 failures predate the v0.9.2 installation. A newly timestamped
+`apple-music-aaha` core dump created while running v0.9.2 is a new incident and
+should be reported with its journal and `coredumpctl` details.
+
+The expected first-install Widevine notice is an in-app dialog asking for one
+manual close and reopen. Routine launches and 30-day maintenance checks should
+not create KDE crash notifications.
 
 To request an immediate CDM repair or maintenance check:
 
@@ -103,6 +140,9 @@ Widevine cannot legally be redistributed inside the AppImage, so the initial
 download is required for full tracks. Choosing **Use Previews Only** keeps the
 CDM updater disabled.
 
+See [PRIVACY.md](PRIVACY.md) for the required connections, local data retained
+by Electron, implemented safeguards, and limitations of the threat model.
+
 The wrapped website must still contact Apple and Apple's content-delivery
 providers to sign in and stream media. To print each first-seen hostname while
 testing locally:
@@ -113,8 +153,11 @@ AAHA_NETWORK_AUDIT=1 npm start
 
 ## Versioning
 
-The initial public release was **v0.9**. The DRM-capable follow-up is
-**v0.9.1**; the npm-compatible internal version is `0.9.1`.
+The initial public release was **v0.9**. Version **v0.9.1** introduced protected
+playback but contained a Linux relaunch loop and is superseded. Version
+**v0.9.2** keeps full-track Widevine playback while replacing automatic
+relaunches with a graceful one-time manual reopen; the npm-compatible internal
+version is `0.9.2`.
 
 ## License
 

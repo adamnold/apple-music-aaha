@@ -1,8 +1,13 @@
-const { spawn } = require("child_process");
 const fs = require("fs");
 const { app, BrowserWindow, components, dialog, Menu, session, shell } = require("electron");
 const path = require("path");
 const cfg = require("../app.config.js");
+const {
+  recordWidevineFailure,
+  recordWidevineSuccess,
+  widevineUpdateIsDue,
+  widevineWasPrepared
+} = require("./widevine-state.js");
 
 app.setName(cfg.name);
 
@@ -28,20 +33,11 @@ function writeWidevineState(state) {
   fs.renameSync(temporaryPath, widevineStatePath);
 }
 
-function widevineUpdateIsDue(state) {
-  if (forceWidevineUpdate) return true;
-
-  const lastUpdate = Date.parse(state.lastSuccessfulUpdate || "");
-  if (!Number.isFinite(lastUpdate)) return true;
-
-  const intervalMs = cfg.widevineUpdateIntervalDays * 24 * 60 * 60 * 1000;
-  return Date.now() - lastUpdate >= intervalMs;
-}
-
 const startupWidevineState = readWidevineState();
 const widevineUpdateScheduled =
   forceWidevineUpdate ||
-  (startupWidevineState.consent !== false && widevineUpdateIsDue(startupWidevineState));
+  (startupWidevineState.consent !== false &&
+    widevineUpdateIsDue(startupWidevineState, cfg.widevineUpdateIntervalDays));
 
 if (process.platform === "linux") {
   app.setDesktopName(cfg.desktopName);
@@ -55,7 +51,6 @@ if (process.platform === "linux") {
 if (!cfg.disableHardening) {
   if (!widevineUpdateScheduled) {
     app.commandLine.appendSwitch("disable-background-networking");
-    app.commandLine.appendSwitch("disable-component-update");
   }
   app.commandLine.appendSwitch("disable-domain-reliability");
   app.commandLine.appendSwitch("disable-breakpad");
@@ -74,22 +69,6 @@ const iconPath = path.join(__dirname, "..", "build", "icons", "512x512.png");
 const observedHosts = new Set();
 let mainWindow;
 
-function restartApp() {
-  const args = process.argv.slice(1);
-
-  if (process.env.APPIMAGE) {
-    const child = spawn(process.env.APPIMAGE, args, {
-      detached: true,
-      stdio: "ignore"
-    });
-    child.unref();
-  } else {
-    app.relaunch({ args });
-  }
-
-  app.exit(0);
-}
-
 async function prepareWidevine() {
   if (!components?.whenReady || !components.WIDEVINE_CDM_ID) {
     console.error("[widevine] DRM-capable Electron runtime is unavailable");
@@ -103,7 +82,7 @@ async function prepareWidevine() {
     return true;
   }
 
-  const state = { ...startupWidevineState };
+  let state = { ...startupWidevineState };
 
   // Stop the updater before obtaining consent. This setting persists across launches.
   components.updatesEnabled = false;
@@ -135,23 +114,31 @@ async function prepareWidevine() {
   }
 
   const widevineId = components.WIDEVINE_CDM_ID;
-  const widevineWasPreparedBeforeLaunch = Boolean(
-    state.lastSuccessfulUpdate && state.componentVersion
-  );
-  const shouldUpdate = forceWidevineUpdate || widevineUpdateIsDue(state);
+  const widevineWasPreparedBeforeLaunch = widevineWasPrepared(state);
+  const shouldUpdate =
+    forceWidevineUpdate || widevineUpdateIsDue(state, cfg.widevineUpdateIntervalDays);
   components.updatesEnabled = shouldUpdate;
 
+  let readyComponents;
   try {
-    await components.whenReady([widevineId]);
+    readyComponents = await components.whenReady([widevineId]);
   } catch (error) {
     components.updatesEnabled = false;
+    state = recordWidevineFailure(state, { repairDue: !shouldUpdate });
+    writeWidevineState(state);
 
     if (!shouldUpdate) {
-      console.warn("[widevine] Installed component was unavailable; scheduling a repair launch");
-      delete state.lastSuccessfulUpdate;
-      writeWidevineState(state);
-      restartApp();
-      return false;
+      console.warn("[widevine] Installed component was unavailable; repair due next launch");
+      await dialog.showMessageBox({
+        type: "warning",
+        title: "Widevine repair needed",
+        message: "Full-track playback is temporarily unavailable.",
+        detail:
+          "Apple Music will open in preview mode. The next launch will make one consented " +
+          "repair check with Google's Widevine component service; it will not restart itself.",
+        buttons: ["Continue"]
+      });
+      return true;
     }
 
     console.error(`[widevine] Installation or update failed: ${error.message}`);
@@ -169,25 +156,39 @@ async function prepareWidevine() {
 
   components.updatesEnabled = false;
   const statusAfter = components.status()[widevineId];
+  const readyComponent = readyComponents?.find((component) => component.id === widevineId);
+  const componentVersion =
+    statusAfter?.version || readyComponent?.version || state.componentVersion || null;
+  const requiresManualRestart =
+    process.platform === "linux" && !widevineWasPreparedBeforeLaunch && Boolean(componentVersion);
 
   if (shouldUpdate) {
-    state.consent = true;
-    state.lastSuccessfulUpdate = new Date().toISOString();
-    state.componentVersion = statusAfter?.version || null;
+    state = recordWidevineSuccess(state, componentVersion, {
+      restartRequired: requiresManualRestart
+    });
+    writeWidevineState(state);
+  } else if (state.restartRequired) {
+    delete state.restartRequired;
+    delete state.lastFailureAt;
     writeWidevineState(state);
   }
 
   console.info(
-    `[widevine] Ready: ${statusAfter?.version || "installed"}; automatic updates disabled`
+    `[widevine] Ready: ${componentVersion || "installed"}; automatic updates disabled`
   );
 
-  if (
-    process.platform === "linux" &&
-    !widevineWasPreparedBeforeLaunch &&
-    statusAfter?.version
-  ) {
-    console.info("[widevine] First Linux installation requires one automatic restart");
-    restartApp();
+  if (requiresManualRestart) {
+    console.info("[widevine] First Linux installation requires one manual reopen");
+    await dialog.showMessageBox({
+      type: "info",
+      title: "Widevine installed",
+      message: "Full Apple Music playback will be ready after one reopen.",
+      detail:
+        "Apple Music will close cleanly now. Reopen it from the application launcher; " +
+        "it will not download Widevine again.",
+      buttons: ["Close Apple Music"]
+    });
+    app.quit();
     return false;
   }
 
