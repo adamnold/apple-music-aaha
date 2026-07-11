@@ -21,14 +21,40 @@ fi
 mkdir -p "$INSTALL_ROOT"
 rm -rf "$STAGE_DEST"
 cp -a "$BUILT_APP" "$STAGE_DEST"
+
+PRESERVED_SANDBOX=0
+STAGED_SANDBOX="$STAGE_DEST/chrome-sandbox"
+INSTALLED_SANDBOX="$APP_DEST/chrome-sandbox"
+
+restore_preserved_sandbox() {
+  if [[ "$PRESERVED_SANDBOX" == "1" && -f "$STAGED_SANDBOX" && -d "$APP_DEST" ]]; then
+    mv "$STAGED_SANDBOX" "$INSTALLED_SANDBOX" 2>/dev/null || true
+  fi
+}
+trap restore_preserved_sandbox EXIT
+
+if [[ -f "$INSTALLED_SANDBOX" && -f "$STAGED_SANDBOX" ]] &&
+   [[ "$(stat -c '%u:%g:%a' "$INSTALLED_SANDBOX")" == "0:0:4755" ]] &&
+   cmp -s "$INSTALLED_SANDBOX" "$STAGED_SANDBOX"; then
+  rm -f "$STAGED_SANDBOX"
+  mv "$INSTALLED_SANDBOX" "$STAGED_SANDBOX"
+  PRESERVED_SANDBOX=1
+fi
+
 rm -rf "$APP_DEST"
 mv "$STAGE_DEST" "$APP_DEST"
+PRESERVED_SANDBOX=0
+trap - EXIT
 
 SANDBOX_HELPER="$APP_DEST/chrome-sandbox"
 if [[ -f "$SANDBOX_HELPER" ]]; then
-  echo ">> Configuring Chromium's sandbox helper (administrator authorization required)..."
-  sudo chown root:root "$SANDBOX_HELPER"
-  sudo chmod 4755 "$SANDBOX_HELPER"
+  if [[ "$(stat -c '%u:%g:%a' "$SANDBOX_HELPER")" == "0:0:4755" ]]; then
+    echo ">> Preserved the existing secure Chromium sandbox helper."
+  else
+    echo ">> Configuring Chromium's sandbox helper (administrator authorization required)..."
+    sudo chown root:root "$SANDBOX_HELPER"
+    sudo chmod 4755 "$SANDBOX_HELPER"
+  fi
 fi
 
 for size in 16 24 32 48 64 96 128 256 512; do
@@ -57,12 +83,14 @@ StartupNotify=true
 X-KDE-StartupNotify=true
 EOF
 
-cp dist/apple-music-aaha-v0.9.1-*.AppImage "$INSTALL_ROOT/"
+rm -f "$INSTALL_ROOT/apple-music-aaha-v0.9-x86_64.AppImage"
+rm -f "$INSTALL_ROOT/apple-music-aaha-v0.9.1-x86_64.AppImage"
+cp dist/apple-music-aaha-v0.9.2-*.AppImage "$INSTALL_ROOT/"
 cp dist/SHA256SUMS "$INSTALL_ROOT/"
 
 update-desktop-database "$apps_dir" 2>/dev/null || true
 gtk-update-icon-cache "$HOME/.local/share/icons/hicolor" 2>/dev/null || true
 kbuildsycoca6 2>/dev/null || true
 
-echo ">> Installed $APP_NAME v0.9.1 under $INSTALL_ROOT"
+echo ">> Installed $APP_NAME v0.9.2 under $INSTALL_ROOT"
 echo ">> Desktop launcher: $desktop_file"
