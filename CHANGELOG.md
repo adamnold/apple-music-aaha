@@ -13,6 +13,8 @@ follow the Git tags published in this repository.
   uninstall refuses missing, mismatched, or tampered installation targets.
 - Added regression coverage for default/custom installation, path validation,
   receipt matching, marker tampering, profile preservation, and explicit purge.
+- Added GitHub Actions validation for locked installs, syntax, tests, audit, and
+  the production AppImage build.
 
 ### Changed
 

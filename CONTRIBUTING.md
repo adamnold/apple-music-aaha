@@ -14,6 +14,8 @@ npm test
 npm run dist
 ```
 
+Pull requests must also pass the repository's GitHub Actions validation.
+
 Verify both the native Wayland window identity and, when relevant, the
 `AAHA_FORCE_X11=1` fallback on KDE Plasma.
 
