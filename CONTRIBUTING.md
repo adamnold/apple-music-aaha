@@ -17,6 +17,10 @@ npm run dist
 Verify both the native Wayland window identity and, when relevant, the
 `AAHA_FORCE_X11=1` fallback on KDE Plasma.
 
+Installer changes must pass disposable default-root and custom-root tests,
+including unsafe-path rejection, receipt mismatch, marker tampering, normal
+profile preservation, and explicit purge.
+
 Changes affecting Electron switches, request filtering, permissions, Widevine,
 updates, installation, or local profile storage must also update the relevant
 README, changelog, and privacy disclosures. Do not describe the wrapper as

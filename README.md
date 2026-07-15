@@ -1,4 +1,4 @@
-# Apple Music (AAHA) v0.9.2
+# Apple Music (AAHA) v0.9.3
 
 An unofficial Apple Music desktop wrapper for Fedora KDE, built by
 **Adam And His Agents (AAHA)**. It opens Apple's official web player in a
@@ -42,17 +42,18 @@ The build is tested on Fedora 44 KDE Plasma, x86_64.
 produces:
 
 - `dist/linux-unpacked/`
-- `dist/apple-music-aaha-v0.9.2-x86_64.AppImage`
+- `dist/apple-music-aaha-v0.9.3-x86_64.AppImage`
 - `dist/SHA256SUMS`
 
-`install.sh` copies the unpacked runtime to
-`~/MyApps/apple-music-aaha/app/`, stores the AppImage beside it, installs the
-transparent icon at standard Linux sizes, and creates a KDE launcher whose
-desktop name and window identity match exactly. Fedora prompts once through
-`sudo` so the root-owned Chromium sandbox helper can be installed with mode
-`4755`; this keeps the renderer sandbox enabled and avoids `--no-sandbox`.
-Updates preserve an existing secure helper when it is byte-identical, avoiding
-another administrator prompt.
+The AppImage can run directly from any location and does not create an
+installation directory. The optional `install.sh` integration copies the
+unpacked runtime to `~/.local/opt/aaha/apple-music-aaha/app/` by default,
+stores the AppImage beside it, installs the transparent icon at standard Linux
+sizes, and creates a KDE launcher whose desktop name and window identity match
+exactly. Use `./install.sh --install-root /absolute/path/apple-music-aaha` for
+an explicit per-application destination. Fedora prompts once through `sudo` so
+the root-owned Chromium sandbox helper can be installed with mode `4755`;
+updates preserve a byte-identical secure helper and avoid another prompt.
 
 To remove the application while preserving its saved website profile, run
 `./uninstall.sh`. To also delete the local login/session data, caches, Widevine
@@ -133,7 +134,7 @@ not create KDE crash notifications.
 To request an immediate CDM repair or maintenance check:
 
 ```bash
-AAHA_WIDEVINE_UPDATE=1 ~/MyApps/apple-music-aaha/app/apple-music-aaha
+AAHA_WIDEVINE_UPDATE=1 ~/.local/opt/aaha/apple-music-aaha/app/apple-music-aaha
 ```
 
 Widevine cannot legally be redistributed inside the AppImage, so the initial
@@ -155,9 +156,9 @@ AAHA_NETWORK_AUDIT=1 npm start
 
 The initial public release was **v0.9**. Version **v0.9.1** introduced protected
 playback but contained a Linux relaunch loop and is superseded. Version
-**v0.9.2** keeps full-track Widevine playback while replacing automatic
-relaunches with a graceful one-time manual reopen; the npm-compatible internal
-version is `0.9.2`.
+**v0.9.2** fixed the Linux Widevine restart loop. Version **v0.9.3** adds the
+standard per-user installation root, explicit custom-root support, and guarded
+uninstall receipts without changing playback behavior.
 
 ## License
 
