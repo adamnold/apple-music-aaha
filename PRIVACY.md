@@ -95,7 +95,7 @@ library.
 To print each first-seen hostname while running the installed app:
 
 ```bash
-AAHA_NETWORK_AUDIT=1 ~/MyApps/apple-music-aaha/app/apple-music-aaha
+AAHA_NETWORK_AUDIT=1 ~/.local/opt/aaha/apple-music-aaha/app/apple-music-aaha
 ```
 
 This is a diagnostic inventory, not a packet capture. Review the output before

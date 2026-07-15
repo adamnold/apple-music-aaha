@@ -3,6 +3,25 @@
 All notable changes to Apple Music (AAHA) are recorded here. Release versions
 follow the Git tags published in this repository.
 
+## [0.9.3] - 2026-07-15
+
+### Added
+
+- Added a standards-oriented default install under
+  `~/.local/opt/aaha/apple-music-aaha` and explicit `--install-root` support.
+- Added an XDG-state installation receipt and matching identity marker so
+  uninstall refuses missing, mismatched, or tampered installation targets.
+- Added regression coverage for default/custom installation, path validation,
+  receipt matching, marker tampering, profile preservation, and explicit purge.
+- Added GitHub Actions validation for locked installs, syntax, tests, audit, and
+  the production AppImage build.
+
+### Changed
+
+- Direct AppImage execution remains location-independent and does not create an
+  installation directory. Playback, Widevine, and privacy behavior are
+  unchanged from v0.9.2.
+
 ## [0.9.2] - 2026-07-10
 
 ### Fixed
@@ -61,6 +80,7 @@ follow the Git tags published in this repository.
 - Added the transparent desktop/taskbar icon, stable Wayland/X11 identity,
   AppImage and unpacked builds, installer, uninstaller, and privacy baseline.
 
+[0.9.3]: https://github.com/adamnold/apple-music-aaha/compare/v0.9.2...v0.9.3
 [0.9.2]: https://github.com/adamnold/apple-music-aaha/compare/v0.9.1...v0.9.2
 [0.9.1]: https://github.com/adamnold/apple-music-aaha/compare/v0.9...v0.9.1
 [0.9]: https://github.com/adamnold/apple-music-aaha/releases/tag/v0.9
