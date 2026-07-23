@@ -1,5 +1,7 @@
 # Privacy and network behavior
 
+Last Updated: 2026-07-23
+
 ## Plain-language summary
 
 Apple Music (AAHA) is not a Google-free browser. It wraps Apple's web player in
@@ -96,6 +98,14 @@ To print each first-seen hostname while running the installed app:
 
 ```bash
 AAHA_NETWORK_AUDIT=1 ~/.local/opt/aaha/apple-music-aaha/app/apple-music-aaha
+```
+
+That command uses the default installation root. If the app was installed with
+`--install-root`, replace `~/.local/opt/aaha/apple-music-aaha` with the exact
+absolute root you chose. Inspect the recorded root before substituting it with:
+
+```bash
+cat "${XDG_STATE_HOME:-$HOME/.local/state}/aaha/apple-music-aaha/install-root"
 ```
 
 This is a diagnostic inventory, not a packet capture. Review the output before

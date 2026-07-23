@@ -1,5 +1,7 @@
 # Apple Music (AAHA) v0.9.3
 
+Last Updated: 2026-07-23
+
 An unofficial Apple Music desktop wrapper for Fedora KDE, built by
 **Adam And His Agents (AAHA)**. It opens Apple's official web player in a
 dedicated Electron window with a stable, transparent taskbar icon.
@@ -122,10 +124,11 @@ restart loop.
 ### KDE notifications after upgrading from v0.9.1
 
 KDE DrKonqi may replay queued crash notifications from v0.9.1 after a reboot,
-even after v0.9.2 is installed. Check the timestamp in the crash report: the
-known v0.9.1 failures predate the v0.9.2 installation. A newly timestamped
-`apple-music-aaha` core dump created while running v0.9.2 is a new incident and
-should be reported with its journal and `coredumpctl` details.
+even after v0.9.2 or later is installed. Check the timestamp in the crash
+report: the known v0.9.1 failures predate the current installation. A newly
+timestamped `apple-music-aaha` core dump created while running the current
+installation is a new incident and should be reported with its journal and
+`coredumpctl` details.
 
 The expected first-install Widevine notice is an in-app dialog asking for one
 manual close and reopen. Routine launches and 30-day maintenance checks should
@@ -135,6 +138,15 @@ To request an immediate CDM repair or maintenance check:
 
 ```bash
 AAHA_WIDEVINE_UPDATE=1 ~/.local/opt/aaha/apple-music-aaha/app/apple-music-aaha
+```
+
+That command uses the default installation root. If the app was installed with
+`--install-root`, replace `~/.local/opt/aaha/apple-music-aaha` with the exact
+absolute root you chose. You can inspect the recorded root before substituting
+it:
+
+```bash
+cat "${XDG_STATE_HOME:-$HOME/.local/state}/aaha/apple-music-aaha/install-root"
 ```
 
 Widevine cannot legally be redistributed inside the AppImage, so the initial
