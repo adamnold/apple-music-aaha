@@ -1,5 +1,7 @@
 # Changelog
 
+Last Updated: 2026-07-23
+
 All notable changes to Apple Music (AAHA) are recorded here. Release versions
 follow the Git tags published in this repository.
 
@@ -13,6 +15,8 @@ follow the Git tags published in this repository.
 
 ### Changed
 
+- Reconciled current-version crash guidance and documented custom-root
+  substitution for installed Widevine and network diagnostics.
 - Updated the checkout and Node setup actions to their Node 24-backed v7
   releases while retaining Node 22 for application validation.
 - Updated the locked build dependency tree to use the patched `fast-uri` 3.1.4
