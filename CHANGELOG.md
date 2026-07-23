@@ -3,6 +3,21 @@
 All notable changes to Apple Music (AAHA) are recorded here. Release versions
 follow the Git tags published in this repository.
 
+## [Unreleased] - 2026-07-23
+
+### Fixed
+
+- Made validation and local AppImage builds explicitly non-publishing so
+  `electron-builder` cannot infer a GitHub release from the CI environment.
+- Added regression coverage for the required `--publish never` build setting.
+
+### Changed
+
+- Updated the checkout and Node setup actions to their Node 24-backed v7
+  releases while retaining Node 22 for application validation.
+- Updated the locked build dependency tree to use the patched `fast-uri` 3.1.4
+  release.
+
 ## [0.9.3] - 2026-07-15
 
 ### Added
