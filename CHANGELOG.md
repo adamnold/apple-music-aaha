@@ -1,11 +1,29 @@
 # Changelog
 
-Last Updated: 2026-07-23
+Last Updated: 2026-09-25
 
 All notable changes to Apple Music (AAHA) are recorded here. Release versions
 follow the Git tags published in this repository.
 
-## [Unreleased] - 2026-07-23
+## [0.9.4] - 2026-09-25
+
+### Changed
+
+- Updated the Castlabs ECS runtime from v42.5.2+wvcus to v42.11.0+wvcus,
+  staying on the same Electron/Chromium 42 line so the Widevine consent,
+  update-interval, and repair flow is unchanged while picking up Chromium
+  security fixes.
+- Refreshed the locked build tooling to clear every `npm audit` finding
+  (`brace-expansion`, `tar`, `undici`, `js-yaml`).
+- `build.sh` now clears `dist/` before building, and both `build.sh` and
+  `install.sh` require exactly one AppImage, so stale builds are never
+  installed alongside the new one.
+- Added a manual-only Release workflow that builds the AppImage from the
+  draft release's target commit, attaches it with `SHA256SUMS`, and publishes
+  it (optionally as a pre-release).
+- Includes the previously unreleased changes below.
+
+## Previously unreleased - 2026-07-23
 
 ### Fixed
 

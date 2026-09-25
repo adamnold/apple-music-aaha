@@ -3,7 +3,7 @@ module.exports = Object.freeze({
   name: "Apple Music",
   productName: "Apple Music",
   repoName: "apple-music-aaha",
-  versionLabel: "v0.9.3",
+  versionLabel: "v0.9.4",
   appId: "com.adamandhisagents.applemusic",
   desktopName: "com.adamandhisagents.applemusic.desktop",
   wmClass: "com.adamandhisagents.applemusic",

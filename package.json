@@ -1,7 +1,7 @@
 {
   "name": "apple-music-aaha",
   "productName": "Apple Music",
-  "version": "0.9.3",
+  "version": "0.9.4",
   "description": "Unofficial Apple Music desktop wrapper for Fedora KDE by Adam And His Agents",
   "main": "src/main.js",
   "desktopName": "com.adamandhisagents.applemusic.desktop",
@@ -19,7 +19,7 @@
     "dist": "electron-builder --linux --publish never"
   },
   "devDependencies": {
-    "electron": "https://codeload.github.com/castlabs/electron-releases/tar.gz/refs/tags/v42.5.2%2Bwvcus",
+    "electron": "https://codeload.github.com/castlabs/electron-releases/tar.gz/refs/tags/v42.11.0%2Bwvcus",
     "electron-builder": "26.15.3"
   },
   "build": {
