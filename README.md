@@ -1,6 +1,6 @@
-# Apple Music (AAHA) v0.9.3
+# Apple Music (AAHA) v0.9.4
 
-Last Updated: 2026-07-23
+Last Updated: 2026-09-24
 
 An unofficial Apple Music desktop wrapper for Fedora KDE, built by
 **Adam And His Agents (AAHA)**. It opens Apple's official web player in a
@@ -44,7 +44,7 @@ The build is tested on Fedora 44 KDE Plasma, x86_64.
 produces:
 
 - `dist/linux-unpacked/`
-- `dist/apple-music-aaha-v0.9.3-x86_64.AppImage`
+- `dist/apple-music-aaha-v0.9.4-x86_64.AppImage`
 - `dist/SHA256SUMS`
 
 The AppImage can run directly from any location and does not create an
@@ -170,7 +170,9 @@ The initial public release was **v0.9**. Version **v0.9.1** introduced protected
 playback but contained a Linux relaunch loop and is superseded. Version
 **v0.9.2** fixed the Linux Widevine restart loop. Version **v0.9.3** adds the
 standard per-user installation root, explicit custom-root support, and guarded
-uninstall receipts without changing playback behavior.
+uninstall receipts without changing playback behavior. Version **v0.9.4**
+updates the Castlabs ECS runtime within the same Electron 42 line and refreshes
+build tooling; the Widevine consent, update, and repair flow is unchanged.
 
 ## License
 
